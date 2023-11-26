@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 PROGNAME=$(basename $0)
+COMPONENTS_DIR=/home/system/components
 die() {
     echo "$PROGNAME: $*" >&2
     exit 1
@@ -37,8 +38,8 @@ check() {
     echo "Checking for updates..."
 
     # Remove the file targets.env if it exists
-    if [ -f targets.env ]; then
-        rm targets.env
+    if [ -f $COMPONENTS_DIR/updater/targets.env ]; then
+        rm $COMPONENTS_DIR/updater/targets.env
     fi
 
     # Check for updates for each component
@@ -48,15 +49,19 @@ check() {
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
 
         # echo "Checking for updates for $component_upper..."
+        cd $COMPONENTS_DIR/$component
 
-        # TODO: Get the current version from the checked out version, not from the versions.env file
-        # Get the current version from the versions.env file
-        current_version=$(grep -E "^${component_upper}_VERSION=" /home/system/components/updater/versions.env | cut -d '=' -f2)
+        # Check if versions.env file exists
+        if [ ! -f $COMPONENTS_DIR/updater/versions.env ]; then
+            # Try to get the current version from the git tags
+            current_version=$(git describe --tags --exact-match 2>/dev/null || true)
+
+        else
+            current_version=$(grep -E "^${component_upper}_VERSION=" /home/system/components/updater/versions.env | cut -d '=' -f2)
+        fi        
 
         # echo "Current version: $current_version"
         
-        cd /home/system/components/$component
-
         # echo "Available versions:"
         # git tag -l | sort -V
 
@@ -69,20 +74,26 @@ check() {
 
         # echo "Next version: $next_version"
 
-        # If there is a next version, save it to the targets.env file
-        if [ "$next_version" != "" ]; then
-            echo "${component_upper}_VERSION=$next_version" >> /home/system/components/updater/targets.env
+        # If there is a current version, do further checks
+        if [ "$current_version" != "" ]; then
+            # If the current version is the latest version, there are no updates
+            if [ "$current_version" = "$latest_version" ]; then
+                next_version=""
+            fi
+
+             # If there is a next version (next version is not empty or is different from current version), save it to the targets.env file
+            if [ "$next_version" != "" ]; then
+                echo "${component_upper}_VERSION=$next_version" >> /home/system/components/updater/targets.env
+            fi
         fi
 
         echo "$component_upper -> Current: $current_version, Next: $next_version, Latest: $latest_version"
 
-        cd /home/system
     done
 
     # If there are no updates, exit
-    if [ ! -f targets.env ]; then
+    if [ ! -f $COMPONENTS_DIR/updater/targets.env ]; then
         echo "\nNo updates available"
-        exit 0
     else
         echo "\nUpdates available:"
         cat /home/system/components/updater/targets.env
