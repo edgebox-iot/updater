@@ -1,0 +1,2 @@
+# Ignore env files as they are created and removed dynamically
+*.env
