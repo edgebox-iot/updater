@@ -17,10 +17,12 @@ git clone https://github.com/edgebox-iot/updater.git
 
 ## Usage
 
+Make sure you run the following commands from the root of this repository.
+
 ### Update check
 
 ```bash
-$ ./updater/run.sh --check
+$ ./run.sh --check
 ```
 
 This will check the current versions of each component, and fetch the next version of each component via git tags.
@@ -31,7 +33,7 @@ After running this command, you can then proceed to run the udpate command 👇
 ### Update
 
 ```bash
-$ ./updater/run.sh --update
+$ ./run.sh --update
 ```
 
 This will update each component to the version specified in `targets.env`.
