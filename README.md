@@ -1,6 +1,8 @@
+![Edgebox Logo Image](https://adm-listmonk.edgebox.io/uploads/logo_transparent_horizontal_300x100.png)
 # updater
 
-Update checks and migration scripts for Edgebox
+Update checks and migration scripts for the Edgebox system.
+Curious about what the Edgebox is? Check out our [website](https://edgebox.io)!
 
 ## Installation
 
