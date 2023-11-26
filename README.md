@@ -22,6 +22,7 @@ $ ./updater/run.sh --update
 ```
 
 This will update each component to the version specified in `targets.env`.
+To generate the `targets.env` file, you must first run the update check command 👆
 It will pull the target version tag from git, and run the migration script for each component version, if it exists in the `migrations` folder.
 
 ## Migrations
