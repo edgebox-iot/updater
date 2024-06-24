@@ -60,6 +60,7 @@ check() {
 
         # echo "Checking for updates for $component_upper..."
         cd $PARENT_DIR/$component
+        git pull > /dev/null 2>&1 || true
 
         # Check if versions.env file exists
         if [ ! -f $SCRIPT_DIR/versions.env ]; then
@@ -126,22 +127,30 @@ update() {
 
     # Update each component
     for component in ws api apps logger edgeboxctl; do
+        component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
         # Get the next version from the targets.env file
         next_version=$(grep -E "^${component_upper}_VERSION=" $SCRIPT_DIR/targets.env | cut -d '=' -f2)
 
-        # Go to the component folder
-        cd $PARENT_DIR/$component
+        if [ "$next_version" != "" ]; then
 
-        # Checkout the next version
-        git checkout $next_version
+            echo "Updating $component to version $next_version"
 
-        # Run the update migration for this component, if it exists
-        if [ -f $SCRIPT_DIR/migrations/$component-$next_version.sh ]; then
-            echo "Running migration for $component $next_version"
-            $SCRIPT_DIR/migrations/$component-$next_version.sh
+            # Go to the component folder
+            cd $PARENT_DIR/$component
+
+            # Checkout the next version
+            git checkout $next_version
+
+            # Run the update migration for this component, if it exists
+            if [ -f $SCRIPT_DIR/migrations/$component-$next_version.sh ]; then
+                echo "Running migration for $component $next_version"
+                $SCRIPT_DIR/migrations/$component-$next_version.sh
+            fi
+
+            cd $PARENT_DIR
+        else
+            echo "Skipping $component due to no next version target"
         fi
-
-        cd $PARENT_DIR
     done
 
     # Remove the targets.env file
