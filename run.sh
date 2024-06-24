@@ -1,7 +1,17 @@
 #!/bin/sh
 set -e
 PROGNAME=$(basename $0)
-COMPONENTS_DIR=/home/system/components
+
+SCRIPT_PATH="$0"
+while [ -L "$SCRIPT_PATH" ]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+SCRIPT_PATH="$(readlink -f "$SCRIPT_PATH")"
+SCRIPT_DIR="$(cd -P "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+PARENT_DIR="$(dirname "$SCRIPT_DIR")"
+
 die() {
     echo "$PROGNAME: $*" >&2
     exit 1
@@ -38,8 +48,8 @@ check() {
     echo "Checking for updates..."
 
     # Remove the file targets.env if it exists
-    if [ -f $COMPONENTS_DIR/updater/targets.env ]; then
-        rm $COMPONENTS_DIR/updater/targets.env
+    if [ -f $SCRIPT_DIR/targets.env ]; then
+        rm $SCRIPT_DIR/targets.env
     fi
 
     # Check for updates for each component
@@ -49,15 +59,14 @@ check() {
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
 
         # echo "Checking for updates for $component_upper..."
-        cd $COMPONENTS_DIR/$component
+        cd $PARENT_DIR/$component
 
         # Check if versions.env file exists
-        if [ ! -f $COMPONENTS_DIR/updater/versions.env ]; then
+        if [ ! -f $SCRIPT_DIR/versions.env ]; then
             # Try to get the current version from the git tags
             current_version=$(git describe --tags --exact-match 2>/dev/null || true)
-
         else
-            current_version=$(grep -E "^${component_upper}_VERSION=" /home/system/components/updater/versions.env | cut -d '=' -f2)
+            current_version=$(grep -E "^${component_upper}_VERSION=" $SCRIPT_DIR/versions.env | cut -d '=' -f2)
         fi        
 
         # echo "Current version: $current_version"
@@ -83,7 +92,7 @@ check() {
 
              # If there is a next version (next version is not empty or is different from current version), save it to the targets.env file
             if [ "$next_version" != "" ]; then
-                echo "${component_upper}_VERSION=$next_version" >> /home/system/components/updater/targets.env
+                echo "${component_upper}_VERSION=$next_version" >> $SCRIPT_DIR/targets.env
             fi
         fi
 
@@ -92,11 +101,11 @@ check() {
     done
 
     # If there are no updates, exit
-    if [ ! -f $COMPONENTS_DIR/updater/targets.env ]; then
+    if [ ! -f $SCRIPT_DIR/targets.env ]; then
         echo "\nNo updates available"
     else
         echo "\nUpdates available:"
-        cat /home/system/components/updater/targets.env
+        cat $SCRIPT_DIR/targets.env
     fi
 }
 
@@ -118,25 +127,25 @@ update() {
     # Update each component
     for component in ws api apps logger edgeboxctl; do
         # Get the next version from the targets.env file
-        next_version=$(grep -E "^${component_upper}_VERSION=" /home/system/components/updater/targets.env | cut -d '=' -f2)
+        next_version=$(grep -E "^${component_upper}_VERSION=" $SCRIPT_DIR/targets.env | cut -d '=' -f2)
 
         # Go to the component folder
-        cd /home/system/components/$component
+        cd $PARENT_DIR/$component
 
         # Checkout the next version
         git checkout $next_version
 
         # Run the update migration for this component, if it exists
-        if [ -f /home/system/components/$component/updater/migrations/$component-$next_version.sh ]; then
+        if [ -f $SCRIPT_DIR/migrations/$component-$next_version.sh ]; then
             echo "Running migration for $component $next_version"
-            /home/system/components/$component/updater/migrations/$component-$next_version.sh
+            $SCRIPT_DIR/migrations/$component-$next_version.sh
         fi
 
-        cd /home/system
+        cd $PARENT_DIR
     done
 
     # Remove the targets.env file
-    rm targets.env
+    rm $SCRIPT_DIR/targets.env
 
     echo "Update complete"
 }
