@@ -45,8 +45,6 @@ EOF
 # 3. If there is a newer (semver) tag than the one read from the file, save it to a variable
 # 4. Write the new available next version to the versions.env file
 check() {
-    echo "Checking for updates..."
-
     # Remove the file targets.env if it exists
     if [ -f $SCRIPT_DIR/targets.env ]; then
         rm $SCRIPT_DIR/targets.env
@@ -117,10 +115,9 @@ check() {
 # 3. Run the update script for each component
 # 4. Update the versions.env file with the new versions
 update() {
-    echo "Updating the system..."
-
+    
     # Check if the targets.env file exists
-    if [ ! -f targets.env ]; then
+    if [ ! -f $SCRIPT_DIR/targets.env ]; then
         echo "No updates available. Run ./run.sh --check to check for updates"
         exit 0
     fi
@@ -147,6 +144,15 @@ update() {
                 $SCRIPT_DIR/migrations/$component-$next_version.sh
             fi
 
+            # If the component is "edgeboxctl", update the edgeboxctl binary
+            if [ "$component" = "edgeboxctl" ]; then
+
+                arch=$(uname -m)
+                echo "Installing edgeboxctl $arch binary for version $next_version"
+                make install-$arch
+            
+            fi
+                
             cd $PARENT_DIR
         else
             echo "Skipping $component due to no next version target"
@@ -155,7 +161,6 @@ update() {
 
     # Remove the targets.env file
     rm $SCRIPT_DIR/targets.env
-
     echo "Update complete"
 }
 
@@ -179,11 +184,3 @@ while [ $# -gt 0 ] ; do
     esac
     shift
 done
-
-cat <<EOF
-
------------------------
-| Operation Completed. | 
------------------------
-
-EOF
