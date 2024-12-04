@@ -51,13 +51,19 @@ check() {
     fi
 
     # Check for updates for each component
-    for component in ws api apps logger edgeboxctl; do
+    for component in ws api apps logger dev edgeboxctl; do
         
         # Convert to uppercase
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
 
         # echo "Checking for updates for $component_upper..."
-        cd $PARENT_DIR/$component
+        cd $PARENT_DIR/$component || true
+        
+        # If this directory is not a git repository, skip
+        if [ ! -d .git ]; then
+            echo "$component_upper -> Current: Not version controlled"
+            continue
+        fi
         git pull > /dev/null 2>&1 || true
 
         # Check if versions.env file exists
@@ -93,6 +99,9 @@ check() {
             if [ "$next_version" != "" ]; then
                 echo "${component_upper}_VERSION=$next_version" >> $SCRIPT_DIR/targets.env
             fi
+        else
+            # If there is no current version, set the current version to the git branch name
+            current_version="dev@$(git rev-parse --abbrev-ref HEAD)"
         fi
 
         echo "$component_upper -> Current: $current_version, Next: $next_version, Latest: $latest_version"
