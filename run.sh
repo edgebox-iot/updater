@@ -56,12 +56,15 @@ check() {
         # Convert to uppercase
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
 
-        # echo "Checking for updates for $component_upper..."
-        cd $PARENT_DIR/$component || true
+        if [ ! -d "$PARENT_DIR/$component" ] || [ ! -x "$PARENT_DIR/$component" ]; then
+            echo "Dev -> Warning: Cannot access directory for $component_upper, skipping..."
+            continue
+        fi
+        cd "$PARENT_DIR/$component" || continue
         
         # If this directory is not a git repository, skip
         if [ ! -d .git ]; then
-            echo "$component_upper -> Current: Not version controlled"
+            echo "$component_upper -> Warning: Not version controlled"
             continue
         fi
         git pull > /dev/null 2>&1 || true
@@ -133,6 +136,8 @@ update() {
 
     # Update each component
     for component in ws api apps logger edgeboxctl; do
+
+
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
         # Get the next version from the targets.env file
         next_version=$(grep -E "^${component_upper}_VERSION=" $SCRIPT_DIR/targets.env | cut -d '=' -f2)
@@ -141,8 +146,11 @@ update() {
 
             echo "Updating $component to version $next_version"
 
-            # Go to the component folder
-            cd $PARENT_DIR/$component
+            if [ ! -d "$PARENT_DIR/$component" ] || [ ! -x "$PARENT_DIR/$component" ]; then
+                echo "Warning: Cannot access directory for $component_upper, skipping..."
+                continue
+            fi
+            cd "$PARENT_DIR/$component" || continue
 
             # Checkout the next version
             git checkout $next_version
