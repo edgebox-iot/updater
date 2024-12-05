@@ -57,7 +57,7 @@ check() {
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
 
         if [ ! -d "$PARENT_DIR/$component" ] || [ ! -x "$PARENT_DIR/$component" ]; then
-            echo "Dev -> Warning: Cannot access directory for $component_upper, skipping..."
+            echo "$component_upper -> Warning: Cannot access directory for component, skipping..."
             continue
         fi
         cd "$PARENT_DIR/$component" || continue
