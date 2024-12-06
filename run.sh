@@ -51,7 +51,7 @@ check() {
     fi
 
     # Check for updates for each component
-    for component in ws api apps logger dev edgeboxctl; do
+    for component in ws api apps logger dev edgeboxctl updater; do
         
         # Convert to uppercase
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
@@ -135,7 +135,7 @@ update() {
     fi
 
     # Update each component
-    for component in ws api apps logger edgeboxctl; do
+    for component in ws api apps logger edgeboxctl updater; do
 
 
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
