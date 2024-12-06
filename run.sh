@@ -12,6 +12,9 @@ SCRIPT_PATH="$(readlink -f "$SCRIPT_PATH")"
 SCRIPT_DIR="$(cd -P "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 
+# Don't yet advertise pre-release versions as updates
+ALLOW_PRERELEASE="false"
+
 die() {
     echo "$PROGNAME: $*" >&2
     exit 1
@@ -88,7 +91,18 @@ check() {
 
         # Get the next version
         next_version=$(git tag -l | sort -V | grep -A1 "$current_version" | tail -1)
+        # if next version contains -alpha*, -beta*, -rc* or -dev*, check if ALLOW_PRERELEASE is set to true
+        
+        # Before running grep, first use echo to debug
+        # echo "$next_version"
 
+        # Fix the grep pattern syntax
+        if [ "$next_version" != "" ] && echo "$next_version" | grep -E "(\-alpha|\-beta|\-rc|\-dev)" > /dev/null; then
+            if [ "$ALLOW_PRERELEASE" != "true" ]; then
+                # echo "$component_upper -> Skipping pre-release version $next_version"
+                next_version=""
+            fi
+        fi
         # echo "Next version: $next_version"
 
         # If there is a current version, do further checks
@@ -101,6 +115,14 @@ check() {
              # If there is a next version (next version is not empty or is different from current version), save it to the targets.env file
             if [ "$next_version" != "" ]; then
                 echo "${component_upper}_VERSION=$next_version" >> $SCRIPT_DIR/targets.env
+            fi
+
+            # if next version contains -alpha*, -beta*, -rc* or -dev*, check if ALLOW_PRERELEASE is set to true
+            if [ "$next_version" != "" ] && [[ "$next_version" == *"-alpha"* || "$next_version" == *"-beta"* || "$next_version" == *"-rc"* || "$next_version" == *"-dev"* ]]; then
+                if [ "$ALLOW_PRERELEASE" != "true" ]; then
+                    echo "$component_upper -> Skipping pre-release version $next_version"
+                    next_version=""
+                fi
             fi
         else
             # If there is no current version, set the current version to the git branch name
