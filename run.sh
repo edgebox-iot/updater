@@ -123,7 +123,8 @@ update() {
     fi
 
     # Update each component
-    for component in ws api apps logger edgeboxctl; do
+    for component in ws api apps logger dev edgeboxctl updater; do
+
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
         # Get the next version from the targets.env file
         next_version=$(grep -E "^${component_upper}_VERSION=" $SCRIPT_DIR/targets.env | cut -d '=' -f2)
