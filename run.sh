@@ -57,7 +57,7 @@ check() {
         component_upper=$(echo "$component" | tr '[:lower:]' '[:upper:]')
 
         if [ ! -d "$PARENT_DIR/$component" ] || [ ! -x "$PARENT_DIR/$component" ]; then
-            echo "Dev -> Warning: Cannot access directory for $component_upper, skipping..."
+            echo "$component_upper -> Warning: Cannot access directory for component, skipping..."
             continue
         fi
         cd "$PARENT_DIR/$component" || continue
@@ -156,6 +156,7 @@ update() {
 
             # Run the update migration for this component, if it exists
             if [ -f $SCRIPT_DIR/migrations/$component-$next_version.sh ]; then
+                chmod +x $SCRIPT_DIR/migrations/$component-$next_version.sh
                 echo "Running migration for $component $next_version"
                 $SCRIPT_DIR/migrations/$component-$next_version.sh
             fi
