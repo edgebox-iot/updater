@@ -7,5 +7,8 @@ cd /home/system/components/
 # Clone the browser dev module from the repository
 git clone https://github.com/edgebox-iot/dev.git || true
 
-# Go to the dev component folder
-cd dev
+# Find which is the latest release to checkout
+cd dev || exit
+
+latest_version=$(git tag | sort -V | tail -n 1) || true
+git checkout $latest_version || true
