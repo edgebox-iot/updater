@@ -11,10 +11,17 @@
 # plugin. Detect which one is available.
 if docker compose version >/dev/null 2>&1; then
     COMPOSE="docker compose"
-    PROJECT="--project-name edgebox"
+    PROJECT="--project-name"
 else
     COMPOSE="docker-compose"
-    PROJECT="-p edgebox"
+    PROJECT="-p"
+fi
+
+# Reuse the compose project the current api-ws container belongs to (old
+# installs use the "ws" project; current installs use "edgebox").
+PROJECT_NAME=$(docker inspect edgebox-api-ws --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>/dev/null)
+if [ -z "$PROJECT_NAME" ]; then
+    PROJECT_NAME=edgebox
 fi
 
 set -e
@@ -22,10 +29,10 @@ set -e
 cd /home/system/components/ws
 
 echo "[api-1.4.3] Rebuilding the api-ws image on the patched PHP 8.3.36 base..."
-$COMPOSE -f docker-compose.yml $PROJECT build api-ws
+$COMPOSE -f docker-compose.yml $PROJECT $PROJECT_NAME build api-ws
 
 echo "[api-1.4.3] Recreating the api-ws container..."
-$COMPOSE -f docker-compose.yml $PROJECT up -d --no-deps api-ws
+$COMPOSE -f docker-compose.yml $PROJECT $PROJECT_NAME up -d --no-deps api-ws
 
 echo "[api-1.4.3] Clearing Symfony prod cache..."
 docker exec edgebox-api-ws php bin/console cache:clear -e prod || true
