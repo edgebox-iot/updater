@@ -7,15 +7,25 @@
 # recreated. Docker downtime for the dashboard/API is ~1 minute while the
 # container is recreated.
 
+# Older boxes ship docker-compose v1 only; newer ones have the compose v2
+# plugin. Detect which one is available.
+if docker compose version >/dev/null 2>&1; then
+    COMPOSE="docker compose"
+    PROJECT="--project-name edgebox"
+else
+    COMPOSE="docker-compose"
+    PROJECT="-p edgebox"
+fi
+
 set -e
 
 cd /home/system/components/ws
 
 echo "[api-1.4.3] Rebuilding the api-ws image on the patched PHP 8.3.36 base..."
-docker compose -f docker-compose.yml --project-name edgebox build api-ws
+$COMPOSE -f docker-compose.yml $PROJECT build api-ws
 
 echo "[api-1.4.3] Recreating the api-ws container..."
-docker compose -f docker-compose.yml --project-name edgebox up -d --no-deps api-ws
+$COMPOSE -f docker-compose.yml $PROJECT up -d --no-deps api-ws
 
 echo "[api-1.4.3] Clearing Symfony prod cache..."
 docker exec edgebox-api-ws php bin/console cache:clear -e prod || true
